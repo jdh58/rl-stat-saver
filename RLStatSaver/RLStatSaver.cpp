@@ -321,15 +321,11 @@ void RLStatSaver::gameEnd(std::string eventName)
 
 	// Get the playlist in an easy to read format
 	std::string playlistName = playlistIDtoName(playlistID);
-
 	std::string fileName = playlistName + ".csv";
 
 	// Output the results in a .csv file
 	std::ofstream stream(gameWrapper->GetDataFolder() / fileName, std::ios_base::app);
-	// std::ofstream stream(gameWrapper->GetDataFolder() / fileName);
-	// %appdata%/bakkesmod/bakkesmod/data/abc.txt now includes "def"
 
-	
 	// Fill the top row with the proper labels
 	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "MVP, " << "SCORE, " << "PLAYERID\n";
 

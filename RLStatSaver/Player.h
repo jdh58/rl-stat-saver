@@ -19,7 +19,6 @@ public:
 		this->mvp = mvp;
 		this->score = score;
 		this->playerID = playerID;
-		this->mmr = mmr;
 	}
 	int playerTeam;
 	std::string playerName;
@@ -31,5 +30,4 @@ public:
 	int mvp;
 	int score;
 	int playerID;
-	int mmr;
 };

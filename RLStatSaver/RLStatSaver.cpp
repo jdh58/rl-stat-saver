@@ -93,7 +93,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 	int mvp = 0;
 	int score = 0;
 	int playerID = 0;
-	float mmr = 0;
 
 	// Max players is 8, so just set the array to that becaause idc
 	Player players[8];
@@ -155,7 +154,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 					continue;
 				}
 				// Otherwise, create a new player object and put it in the array
-				Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, mmr);
+				Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID);
 				players[j] = thisPlayer;
 			}
 		}
@@ -169,6 +168,11 @@ void RLStatSaver::gameEnd(std::string eventName)
 			lobbySize++;
 			continue;
 		}
+	}
+
+	// This will prevent a crash or bad data in an odd numbered lobby
+	if (lobbySize % 2 != 0) {
+		return;
 	}
 
 	// Now add up the first half of the player's goals and the second half of the player's goals to get the score.

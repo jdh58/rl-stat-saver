@@ -207,26 +207,16 @@ std::string playlistIDtoName(int playlistNumber) {
 
 void RLStatSaver::gameEnd(std::string eventName)
 {
-	LOG("GAME END CODE EXECUTED");
-
 	// If not in an online game, return.
 	if (!gameWrapper->IsInOnlineGame()) { return; }
-
-	LOG("IS IN ONLINE GAME");
 
 	ServerWrapper server = gameWrapper->GetCurrentGameState();
 	if (!server) { return; }
 
-	LOG("SERVER IS NOT NULL");
-
 	GameSettingPlaylistWrapper playlist = server.GetPlaylist();
 	if (!playlist) { return; }
 
-	LOG("PLAYLIST IS NOT NULL");
-
 	int playlistID = playlist.GetPlaylistId();
-
-	LOG(std::to_string(playlistID));
 
 	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
 
@@ -331,8 +321,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 
 	// Get the playlist in an easy to read format
 	std::string playlistName = playlistIDtoName(playlistID);
-
-	LOG(players[0].playerName);
 
 	std::string fileName = playlistName + ".csv";
 

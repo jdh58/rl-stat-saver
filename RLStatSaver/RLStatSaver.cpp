@@ -279,11 +279,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 		}
 	}
 
-	// This will prevent a crash or bad data in an odd numbered lobby
-	if (lobbySize % 2 != 0) {
-		return;
-	}
-
 	// Now add up the teammate player's goals and the opponent player's goals to get the score.
 	int playerTeamGoals = 0;
 	int opponentTeamGoals = 0;

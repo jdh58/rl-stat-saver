@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "RLStatSaver.h"
 #include "fstream"
+#include <iomanip>
 
 
 BAKKESMOD_PLUGIN(RLStatSaver, "Stat Saver", plugin_version, PLUGINTYPE_FREEPLAY)
@@ -76,7 +77,72 @@ void RLStatSaver::gameEnd(std::string eventName)
 
 	LOG(std::to_string(playlistID));
 
+	CarWrapper localCar = gameWrapper->GetLocalCar();
+	if (!localCar) { return; }
 
+	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
+
+	int localPlayerPRI;
+	int localTeam = 0;
+	int playerTeam = 0;
+	int playercount = 0;
+	std::string playerName = "";
+	int goals = 0;
+	int assists = 0;
+	int saves = 0;
+	int shots = 0;
+	int demos = 0;
+	int mvp = 0;
+	int score = 0;
+	int playerID = 0;
+	float mmr = 0;
+	bool teammate;
+
+	// Get the local player instance and team.
+	for (int i = 0; i < pris.Count(); i++) {
+		bool isLocalPlayer = pris.Get(i).IsLocalPlayerPRI();
+
+		if (isLocalPlayer) {
+			localTeam = pris.Get(i).GetTeamNum();
+			localPlayerPRI = i;
+		}
+	}
+
+	// This one will only create the teammates.
+	for (int i = 0; i < pris.Count(); i++) {
+		playerTeam = pris.Get(i).GetTeamNum();
+		if (playerTeam == localTeam) {
+			playercount++;
+			playerName = pris.Get(i).GetPlayerName().ToString();
+			goals = pris.Get(i).GetMatchGoals();
+			assists = pris.Get(i).GetMatchAssists();
+			saves = pris.Get(i).GetMatchSaves();
+			shots = pris.Get(i).GetMatchShots();
+			demos = pris.Get(i).GetMatchDemolishes();
+			mvp = pris.Get(i).GetbMatchMVP();
+			score = pris.Get(i).GetMatchScore();
+			playerID = pris.Get(i).GetPlayerID();
+			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(playerID, playlistID);
+		}
+	}
+
+	// Now this will create the opponents.
+	for (int i = 0; i < pris.Count(); i++) {
+		playerTeam = pris.Get(i).GetTeamNum();
+		if (playerTeam != localTeam && playerTeam < 2) {
+			playercount++;
+			playerName = pris.Get(i).GetPlayerName().ToString();
+			goals = pris.Get(i).GetMatchGoals();
+			assists = pris.Get(i).GetMatchAssists();
+			saves = pris.Get(i).GetMatchSaves();
+			shots = pris.Get(i).GetMatchShots();
+			demos = pris.Get(i).GetMatchDemolishes();
+			mvp = pris.Get(i).GetbMatchMVP();
+			score = pris.Get(i).GetMatchScore();
+			playerID = pris.Get(i).GetPlayerID();
+			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(playerID, playlistID);
+		}
+	}
 
 	if (playlistID == 11) {
 

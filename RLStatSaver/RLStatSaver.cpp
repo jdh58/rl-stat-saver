@@ -273,7 +273,10 @@ void RLStatSaver::gameEnd(std::string eventName)
 			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
-			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(playerID, playlistID);
+			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(
+				pris.Get(i).GetUniqueIdWrapper(),
+				gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
+			LOG(std::to_string(mmr));
 
 			// Create a new player object and put it in the array
 			Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID);

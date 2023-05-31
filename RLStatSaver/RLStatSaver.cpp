@@ -1,14 +1,19 @@
 #include "pch.h"
 #include "RLStatSaver.h"
+#include "fstream"
 
 
-BAKKESMOD_PLUGIN(RLStatSaver, "Writes full match stats to a spreadsheet after each game ends.", plugin_version, PLUGINTYPE_FREEPLAY)
+BAKKESMOD_PLUGIN(RLStatSaver, "Stat Saver", plugin_version, PLUGINTYPE_FREEPLAY)
 
 std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
 
 void RLStatSaver::onLoad()
 {
 	_globalCvarManager = cvarManager;
+	LOG("Hello im Statsaver plugin");
+
+	gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.EventMatchEnded", std::bind(&RLStatSaver::gameEnd, this, std::placeholders::_1));
+
 	//cvarManager->log("Plugin loaded!");
 
 	//cvarManager->registerNotifier("my_aweseome_notifier", [&](std::vector<std::string> args) {
@@ -45,4 +50,38 @@ void RLStatSaver::onLoad()
 
 void RLStatSaver::onUnload()
 {
+	LOG("Goodbye i was statsaver plugin");
+}
+
+void RLStatSaver::gameEnd(std::string eventName)
+{
+	LOG("GAME END CODE EXECUTED");
+
+	// If not in an online game, return.
+	if (!gameWrapper->IsInOnlineGame()) { return; }
+
+	LOG("IS IN ONLINE GAME");
+
+	ServerWrapper server = gameWrapper->GetCurrentGameState();
+	if (!server) { return; }
+
+	LOG("SERVER IS NOT NULL");
+
+	GameSettingPlaylistWrapper playlist = server.GetPlaylist();
+	if (!playlist) { return; }
+
+	LOG("PLAYLIST IS NOT NULL");
+
+	int playlistID = playlist.GetPlaylistId();
+
+	LOG(std::to_string(playlistID));
+
+
+
+	if (playlistID == 11) {
+
+//			std::ofstream stream(gameWrapper->GetBakkesModPath() / "data" / "abc.txt");
+	//	std::ofstream stream(gameWrapper->GetDataFolder() / "abc.txt"); //Note the removal of "data"
+		//stream << "def";
+	}
 }

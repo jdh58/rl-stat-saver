@@ -16,6 +16,7 @@ class RLStatSaver: public BakkesMod::Plugin::BakkesModPlugin/*, public BakkesMod
 	//Boilerplate
 	virtual void onLoad();
 	virtual void onUnload();
+	void gameEnd(std::string eventName);
 
 	// Inherited via PluginSettingsWindow
 	/*

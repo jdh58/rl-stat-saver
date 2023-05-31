@@ -78,9 +78,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 
 	LOG(std::to_string(playlistID));
 
-	CarWrapper localCar = gameWrapper->GetLocalCar();
-	if (!localCar) { return; }
-
 	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
 
 	int localPlayerPRI;
@@ -124,7 +121,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
-			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(playerID, playlistID);
 
 			for (int j = 0; j < 8; j++) {
 				// If array slot already has a player in it, skip this loop
@@ -152,7 +148,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
-			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(playerID, playlistID);
 
 			for (int j = 0; j < 8; j++) {
 				// If array slot already has a player in it, skip this loop
@@ -166,9 +161,27 @@ void RLStatSaver::gameEnd(std::string eventName)
 		}
 	}
 
+	// Get team size
+	int lobbySize = 0;
+	for (int i = 0; i < 8; i++) {
+		// If array slot already has a player in it, iterate 1 and 
+		if (players[i].playerID > 1) {
+			lobbySize++;
+			continue;
+		}
+	}
 
+	// Now add up the first half of the player's goals and the second half of the player's goals to get the score.
+	int playerTeamGoals = 0;
+	for (int i = 0; i < lobbySize / 2; i++) {
+		playerTeamGoals += players[i].goals;
+	}
+	int opponentTeamGoals = 0;
+	for (int i = lobbySize / 2; i < lobbySize; i++) {
+		opponentTeamGoals += players[i].goals;
+	}
 
-	
+	LOG(players[0].playerName);
 
 	if (playlistID == 11) {
 

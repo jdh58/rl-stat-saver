@@ -5,7 +5,7 @@ class Player
 {
 public:
 	// Default constructor
-	Player() { playerID = 0;  return; };
+	Player() { playerID = -1;  return; };
 	// Player constructor to save stats
 	Player(int playerTeam, std::string playerName, int goals, int assists, int saves, int shots, int demos, int mvp, int score, int playerID, int mmr)
 	{
@@ -32,4 +32,4 @@ public:
 	int score;
 	int playerID;
 	int mmr;
-}
+};

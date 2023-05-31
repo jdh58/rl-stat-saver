@@ -55,6 +55,156 @@ void RLStatSaver::onUnload()
 	LOG("Goodbye i was statsaver plugin");
 }
 
+std::string playlistIDtoName(int playlistNumber) {
+	std::string playlistName;
+
+	switch (playlistNumber) {
+	case -2:
+		playlistName = "Intermission";
+		break;
+	case 0:
+		playlistName = "Casual";
+		break;
+	case 1:
+		playlistName = "Duel";
+		break;
+	case 2:
+		playlistName = "Doubles";
+		break;
+	case 3:
+		playlistName = "Standard";
+		break;
+	case 4:
+		playlistName = "Chaos";
+		break;
+	case 6:
+		playlistName = "Private Match";
+		break;
+	case 7:
+		playlistName = "Season";
+		break;
+	case 8:
+		playlistName = "Exhibition";
+		break;
+	case 9:
+		playlistName = "Training";
+		break;
+	case 10:
+		playlistName = "Duel (Ranked)";
+		break;
+	case 11:
+		playlistName = "Doubles (Ranked)";
+		break;
+	case 13:
+		playlistName = "Standard (Ranked)";
+		break;
+	case 15:
+		playlistName = "Snow Day";
+		break;
+	case 16:
+		playlistName = "Rocket Labs";
+		break;
+	case 17:
+		playlistName = "Hoops";
+		break;
+	case 18:
+		playlistName = "Rumble";
+		break;
+	case 19:
+		playlistName = "Workshop";
+		break;
+	case 20:
+		playlistName = "Custom Training Editor";
+		break;
+	case 21:
+		playlistName = "Custom Training";
+		break;
+	case 22:
+		playlistName = "Tournament Match (Custom)";
+		break;
+	case 23:
+		playlistName = "Dropshot";
+		break;
+	case 24:
+		playlistName = "Local Match";
+		break;
+	case 26:
+		playlistName = "External Match (Ranked)";
+		break;
+	case 27:
+		playlistName = "Hoops (Ranked)";
+		break;
+	case 28:
+		playlistName = "Rumble (Ranked)";
+		break;
+	case 29:
+		playlistName = "Dropshot (Ranked)";
+		break;
+	case 30:
+		playlistName = "Snow Day (Ranked)";
+		break;
+	case 31:
+		playlistName = "Ghost Hunt";
+		break;
+	case 32:
+		playlistName = "Beach Ball";
+		break;
+	case 33:
+		playlistName = "Spike Rush";
+		break;
+	case 34:
+		playlistName = "Tournament Match (Automatic)";
+		break;
+	case 35:
+		playlistName = "Rocket Labs";
+		break;
+	case 37:
+		playlistName = "Dropshot Rumble";
+		break;
+	case 38:
+		playlistName = "Heatseeker";
+		break;
+	case 41:
+		playlistName = "Boomer Ball";
+		break;
+	case 43:
+		playlistName = "Heatseeker Doubles";
+		break;
+	case 44:
+		playlistName = "Winter Breakaway";
+		break;
+	case 46:
+		playlistName = "Gridiron";
+		break;
+	case 47:
+		playlistName = "Super Cube";
+		break;
+	case 48:
+		playlistName = "Tactical Rumble";
+		break;
+	case 49:
+		playlistName = "Spring Loaded";
+		break;
+	case 50:
+		playlistName = "Speed Demon";
+		break;
+	case 52:
+		playlistName = "Gotham City Rumble";
+		break;
+	case 54:
+		playlistName = "Knockout";
+		break;
+	case 55:
+		playlistName = "confidential_thirdwheel_test";
+		break;
+	default:
+		playlistName = "Invalid Playlist";
+		break;
+
+		return playlistName;
+	}
+}
+
 void RLStatSaver::gameEnd(std::string eventName)
 {
 	LOG("GAME END CODE EXECUTED");
@@ -81,7 +231,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
 
 	int localPlayerPRI;
-	int localTeam = 0;
+	int localTeam;
 	int playerTeam = 0;
 	int playercount = 0;
 	std::string playerName = "";
@@ -121,42 +271,9 @@ void RLStatSaver::gameEnd(std::string eventName)
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
 
-			for (int j = 0; j < 8; j++) {
-				// If array slot already has a player in it, skip this loop
-				if (players[j].playerID > 1) {
-					continue;
-				}
-				// Otherwise, create a new player object and put it in the array
-				Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, mmr);
-				players[j] = thisPlayer;
-			}
-		}
-	}
-
-	// Now this will create the opponents.
-	// Yes it repeats code, but once again I don't care
-	for (int i = 0; i < pris.Count(); i++) {
-		playerTeam = pris.Get(i).GetTeamNum();
-		if (playerTeam != localTeam && playerTeam < 2) {
-			playerName = pris.Get(i).GetPlayerName().ToString();
-			goals = pris.Get(i).GetMatchGoals();
-			assists = pris.Get(i).GetMatchAssists();
-			saves = pris.Get(i).GetMatchSaves();
-			shots = pris.Get(i).GetMatchShots();
-			demos = pris.Get(i).GetMatchDemolishes();
-			mvp = pris.Get(i).GetbMatchMVP();
-			score = pris.Get(i).GetMatchScore();
-			playerID = pris.Get(i).GetPlayerID();
-
-			for (int j = 0; j < 8; j++) {
-				// If array slot already has a player in it, skip this loop
-				if (players[j].playerID > 1) {
-					continue;
-				}
-				// Otherwise, create a new player object and put it in the array
-				Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID);
-				players[j] = thisPlayer;
-			}
+			// Create a new player object and put it in the array
+			Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID);
+			players[i] = thisPlayer;
 		}
 	}
 
@@ -175,22 +292,31 @@ void RLStatSaver::gameEnd(std::string eventName)
 		return;
 	}
 
-	// Now add up the first half of the player's goals and the second half of the player's goals to get the score.
+	// Now add up the teammate player's goals and the opponent player's goals to get the score.
 	int playerTeamGoals = 0;
-	for (int i = 0; i < lobbySize / 2; i++) {
-		playerTeamGoals += players[i].goals;
-	}
 	int opponentTeamGoals = 0;
-	for (int i = lobbySize / 2; i < lobbySize; i++) {
-		opponentTeamGoals += players[i].goals;
+	for (int i = 0; i < lobbySize; i++) {
+		if (players[i].playerTeam == localTeam) {
+			playerTeamGoals += players[i].goals;
+		}
+		else {
+			opponentTeamGoals += players[i].goals;
+		}
 	}
+
+
+	// Get the playlist in an easy to read format
+	std::string playlistName = playlistIDtoName(playlistID);
 
 	LOG(players[0].playerName);
 
-	if (playlistID == 11) {
+	std::string fileName = playlistName + ".txt";
 
-//			std::ofstream stream(gameWrapper->GetBakkesModPath() / "data" / "abc.txt");
-	//	std::ofstream stream(gameWrapper->GetDataFolder() / "abc.txt"); //Note the removal of "data"
-		//stream << "def";
-	}
+	// Output the results in a .csv file
+	std::ofstream stream(gameWrapper->GetBakkesModPath() / "gameData" / fileName);
+	std::ofstream stream(gameWrapper->GetDataFolder() / fileName); //Note the removal of "data"
+
+	// Iterate through each player and output the results
+	for (int i = )
+	// %appdata%/bakkesmod/bakkesmod/data/abc.txt now includes "def"
 }

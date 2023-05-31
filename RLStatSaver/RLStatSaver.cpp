@@ -329,7 +329,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 		if (players[i].playerTeam == localTeam) {
 			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
-				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", " << players[i].playerID << ", "
+				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
 				<< playerTeamGoals << ", " << playerWorL << "\n";
 		}
 	}
@@ -339,7 +339,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 		if (players[i].playerTeam != localTeam) {
 			stream << opponentTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
-				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", " << players[i].playerID << ", "
+				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
 				<< opponentTeamGoals << ", " << opponentWorL << "\n";
 		}
 	}

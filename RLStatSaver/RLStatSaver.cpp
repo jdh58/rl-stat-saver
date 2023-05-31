@@ -97,7 +97,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 	int score = 0;
 	int playerID = 0;
 	float mmr = 0;
-	bool teammate;
 
 	// Max players is 8, so just set the array to that becaause idc
 	Player players[8];
@@ -126,6 +125,16 @@ void RLStatSaver::gameEnd(std::string eventName)
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
 			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(playerID, playlistID);
+
+			for (int j = 0; j < 8; j++) {
+				// If array slot already has a player in it, skip this loop
+				if (players[j].playerID > 1) {
+					continue;
+				}
+				// Otherwise, create a new player object and put it in the array
+				Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, mmr);
+				players[j] = thisPlayer;
+			}
 		}
 	}
 
@@ -144,8 +153,20 @@ void RLStatSaver::gameEnd(std::string eventName)
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
 			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(playerID, playlistID);
+
+			for (int j = 0; j < 8; j++) {
+				// If array slot already has a player in it, skip this loop
+				if (players[j].playerID > 1) {
+					continue;
+				}
+				// Otherwise, create a new player object and put it in the array
+				Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, mmr);
+				players[j] = thisPlayer;
+			}
 		}
 	}
+
+
 
 	
 

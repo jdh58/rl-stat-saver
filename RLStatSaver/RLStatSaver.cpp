@@ -78,7 +78,7 @@ std::string playlistIDtoName(int playlistNumber) {
 		playlistName = "Chaos";
 		break;
 	case 6:
-		playlistName = "Private Match";
+		playlistName = "Private_Match";
 		break;
 	case 7:
 		playlistName = "Season";
@@ -99,10 +99,10 @@ std::string playlistIDtoName(int playlistNumber) {
 		playlistName = "Standard_Ranked";
 		break;
 	case 15:
-		playlistName = "Snow Day";
+		playlistName = "Snow_Day";
 		break;
 	case 16:
-		playlistName = "Rocket Labs";
+		playlistName = "Rocket_Labs";
 		break;
 	case 17:
 		playlistName = "Hoops";
@@ -114,82 +114,82 @@ std::string playlistIDtoName(int playlistNumber) {
 		playlistName = "Workshop";
 		break;
 	case 20:
-		playlistName = "Custom Training Editor";
+		playlistName = "Custom_Training_Editor";
 		break;
 	case 21:
-		playlistName = "Custom Training";
+		playlistName = "Custom_Training";
 		break;
 	case 22:
-		playlistName = "Tournament Match (Custom)";
+		playlistName = "Tournament_Match_Custom";
 		break;
 	case 23:
 		playlistName = "Dropshot";
 		break;
 	case 24:
-		playlistName = "Local Match";
+		playlistName = "Local_Match";
 		break;
 	case 26:
-		playlistName = "External Match (Ranked)";
+		playlistName = "External_Match_Ranked";
 		break;
 	case 27:
-		playlistName = "Hoops (Ranked)";
+		playlistName = "Hoops_Ranked";
 		break;
 	case 28:
-		playlistName = "Rumble (Ranked)";
+		playlistName = "Rumble_Ranked";
 		break;
 	case 29:
-		playlistName = "Dropshot (Ranked)";
+		playlistName = "Dropshot_Ranked";
 		break;
 	case 30:
-		playlistName = "Snow Day (Ranked)";
+		playlistName = "Snow_Day_Ranked";
 		break;
 	case 31:
-		playlistName = "Ghost Hunt";
+		playlistName = "Ghost_Hunt";
 		break;
 	case 32:
-		playlistName = "Beach Ball";
+		playlistName = "Beach_Ball";
 		break;
 	case 33:
-		playlistName = "Spike Rush";
+		playlistName = "Spike_Rush";
 		break;
 	case 34:
-		playlistName = "Tournament Match (Automatic)";
+		playlistName = "Tournament_Match_Automatic";
 		break;
 	case 35:
-		playlistName = "Rocket Labs";
+		playlistName = "Rocket_Labs";
 		break;
 	case 37:
-		playlistName = "Dropshot Rumble";
+		playlistName = "Dropshot_Rumble";
 		break;
 	case 38:
 		playlistName = "Heatseeker";
 		break;
 	case 41:
-		playlistName = "Boomer Ball";
+		playlistName = "Boomer_Ball";
 		break;
 	case 43:
-		playlistName = "Heatseeker Doubles";
+		playlistName = "Heatseeker_Doubles";
 		break;
 	case 44:
-		playlistName = "Winter Breakaway";
+		playlistName = "Winter_Breakaway";
 		break;
 	case 46:
 		playlistName = "Gridiron";
 		break;
 	case 47:
-		playlistName = "Super Cube";
+		playlistName = "Super_Cube";
 		break;
 	case 48:
-		playlistName = "Tactical Rumble";
+		playlistName = "Tactical_Rumble";
 		break;
 	case 49:
-		playlistName = "Spring Loaded";
+		playlistName = "Spring_Loaded";
 		break;
 	case 50:
-		playlistName = "Speed Demon";
+		playlistName = "Speed_Demon";
 		break;
 	case 52:
-		playlistName = "Gotham City Rumble";
+		playlistName = "Gotham_City_Rumble";
 		break;
 	case 54:
 		playlistName = "Knockout";
@@ -198,7 +198,7 @@ std::string playlistIDtoName(int playlistNumber) {
 		playlistName = "confidential_thirdwheel_test";
 		break;
 	default:
-		playlistName = "Invalid Playlist";
+		playlistName = "Invalid_Playlist";
 		break;
 
 		return playlistName;
@@ -327,14 +327,14 @@ void RLStatSaver::gameEnd(std::string eventName)
 	std::ofstream stream(gameWrapper->GetDataFolder() / fileName, std::ios_base::app);
 
 	// Fill the top row with the proper labels
-	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "MVP, " << "SCORE, " << "PLAYERID\n";
+	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "MVP, " << "SCORE, " << "PLAYERID, " << "TEAM GOALS, " << "W/L\n";
 
 	// Iterate through each teammate and output the results
 	for (int i = 0; i < lobbySize; i++) {
 		if (players[i].playerTeam == localTeam) {
 			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
-				<< players[i].demos << ", " << players[i].score << ", " << players[i].playerID << ", "
+				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", " << players[i].playerID << ", "
 				<< playerTeamGoals << ", " << playerWorL << "\n";
 		}
 	}
@@ -344,7 +344,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 		if (players[i].playerTeam != localTeam) {
 			stream << opponentTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
-				<< players[i].demos << ", " << players[i].score << ", " << players[i].playerID << ", "
+				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", " << players[i].playerID << ", "
 				<< opponentTeamGoals << ", " << opponentWorL << "\n";
 		}
 	}

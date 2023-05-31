@@ -90,13 +90,13 @@ std::string playlistIDtoName(int playlistNumber) {
 		playlistName = "Training";
 		break;
 	case 10:
-		playlistName = "Duel (Ranked)";
+		playlistName = "Duel_Ranked";
 		break;
 	case 11:
-		playlistName = "Doubles (Ranked)";
+		playlistName = "Doubles_Ranked";
 		break;
 	case 13:
-		playlistName = "Standard (Ranked)";
+		playlistName = "Standard_Ranked";
 		break;
 	case 15:
 		playlistName = "Snow Day";
@@ -232,6 +232,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 
 	int localPlayerPRI;
 	int localTeam;
+	int localPlayerID;
 	int playerTeam = 0;
 	int playercount = 0;
 	std::string playerName = "";
@@ -254,13 +255,14 @@ void RLStatSaver::gameEnd(std::string eventName)
 		if (isLocalPlayer) {
 			localTeam = pris.Get(i).GetTeamNum();
 			localPlayerPRI = i;
+			localPlayerID = pris.Get(i).GetPlayerID();
 		}
 	}
 
-	// This one will only create the teammates.
+	// This will create a player instance for each player
 	for (int i = 0; i < pris.Count(); i++) {
 		playerTeam = pris.Get(i).GetTeamNum();
-		if (playerTeam == localTeam) {
+		if (playerTeam < 2) {
 			playerName = pris.Get(i).GetPlayerName().ToString();
 			goals = pris.Get(i).GetMatchGoals();
 			assists = pris.Get(i).GetMatchAssists();
@@ -304,19 +306,68 @@ void RLStatSaver::gameEnd(std::string eventName)
 		}
 	}
 
+	std::string playerWorL;
+	std::string opponentWorL;
+
+	if (playerTeamGoals > opponentTeamGoals) {
+		playerWorL = "WIN";
+		opponentWorL = "LOSS";
+	}
+	else {
+		playerWorL = "LOSS";
+		opponentWorL = "WIN";
+	}
+
+	std::string localTeamColor;
+	std::string opponentTeamColor;
+	if (localTeam == 0) {
+		localTeamColor = "Blue";
+		opponentTeamColor = "Orange";
+	} else {
+		localTeamColor = "Orange";
+		opponentTeamColor = "Blue";
+	}
+
 
 	// Get the playlist in an easy to read format
 	std::string playlistName = playlistIDtoName(playlistID);
 
 	LOG(players[0].playerName);
 
-	std::string fileName = playlistName + ".txt";
+	std::string fileName = playlistName + ".csv";
 
 	// Output the results in a .csv file
-	std::ofstream stream(gameWrapper->GetBakkesModPath() / "gameData" / fileName);
-	std::ofstream stream(gameWrapper->GetDataFolder() / fileName); //Note the removal of "data"
-
-	// Iterate through each player and output the results
-	for (int i = )
+	std::ofstream stream(gameWrapper->GetDataFolder() / fileName, std::ios_base::app);
+	// std::ofstream stream(gameWrapper->GetDataFolder() / fileName);
 	// %appdata%/bakkesmod/bakkesmod/data/abc.txt now includes "def"
+
+	
+	// Fill the top row with the proper labels
+	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "MVP, " << "SCORE, " << "PLAYERID\n";
+
+	// Iterate through each teammate and output the results
+	for (int i = 0; i < lobbySize; i++) {
+		if (players[i].playerTeam == localTeam) {
+			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
+				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
+				<< players[i].demos << ", " << players[i].score << ", " << players[i].playerID << ", "
+				<< playerTeamGoals << ", " << playerWorL << "\n";
+		}
+	}
+
+	// Iterate through each opponent and output the results
+	for (int i = 0; i < lobbySize; i++) {
+		if (players[i].playerTeam != localTeam) {
+			stream << opponentTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
+				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
+				<< players[i].demos << ", " << players[i].score << ", " << players[i].playerID << ", "
+				<< opponentTeamGoals << ", " << opponentWorL << "\n";
+		}
+	}
+
+	// Finish by putting a 2 line gap between this and the next game
+	stream << "\n\n";
 }
+
+
+

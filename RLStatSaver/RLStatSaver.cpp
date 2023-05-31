@@ -16,6 +16,14 @@ void RLStatSaver::onLoad()
 
 	gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.EventMatchEnded", std::bind(&RLStatSaver::gameEnd, this, std::placeholders::_1));
 
+
+	notifierToken = gameWrapper->GetMMRWrapper().RegisterMMRNotifier(
+		[this](UniqueIDWrapper id) {
+			float mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(id, 11);
+			LOG("{} MMR is: {}", id.GetIdString(), mmr);
+		}
+	);
+
 	//cvarManager->log("Plugin loaded!");
 
 	//cvarManager->registerNotifier("my_aweseome_notifier", [&](std::vector<std::string> args) {
@@ -220,6 +228,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 
 	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
 
+	int lobbySize = pris.Count();
 	int localPlayerPRI;
 	int localTeam;
 	int localPlayerID;
@@ -234,6 +243,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	int mvp = 0;
 	int score = 0;
 	int playerID = 0;
+	float mmr = 0;
 
 	// Max players is 8, so just set the array to that becaause idc
 	Player players[8];
@@ -249,6 +259,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 		}
 	}
 
+
 	// This will create a player instance for each player
 	for (int i = 0; i < pris.Count(); i++) {
 		playerTeam = pris.Get(i).GetTeamNum();
@@ -262,20 +273,11 @@ void RLStatSaver::gameEnd(std::string eventName)
 			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
+			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(playerID, playlistID);
 
 			// Create a new player object and put it in the array
 			Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID);
 			players[i] = thisPlayer;
-		}
-	}
-
-	// Get team size
-	int lobbySize = 0;
-	for (int i = 0; i < 8; i++) {
-		// If array slot already has a player in it, iterate 1 and 
-		if (players[i].playerID > 1) {
-			lobbySize++;
-			continue;
 		}
 	}
 

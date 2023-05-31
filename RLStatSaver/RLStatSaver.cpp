@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "RLStatSaver.h"
+#include "Player.h"
 #include "fstream"
 #include <iomanip>
 
@@ -98,7 +99,10 @@ void RLStatSaver::gameEnd(std::string eventName)
 	float mmr = 0;
 	bool teammate;
 
-	// Get the local player instance and team.
+	// Max players is 8, so just set the array to that becaause idc
+	Player players[8];
+
+	// Get the local player instance and local team
 	for (int i = 0; i < pris.Count(); i++) {
 		bool isLocalPlayer = pris.Get(i).IsLocalPlayerPRI();
 
@@ -112,7 +116,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 	for (int i = 0; i < pris.Count(); i++) {
 		playerTeam = pris.Get(i).GetTeamNum();
 		if (playerTeam == localTeam) {
-			playercount++;
 			playerName = pris.Get(i).GetPlayerName().ToString();
 			goals = pris.Get(i).GetMatchGoals();
 			assists = pris.Get(i).GetMatchAssists();
@@ -127,10 +130,10 @@ void RLStatSaver::gameEnd(std::string eventName)
 	}
 
 	// Now this will create the opponents.
+	// Yes it repeats code, but once again I don't care
 	for (int i = 0; i < pris.Count(); i++) {
 		playerTeam = pris.Get(i).GetTeamNum();
 		if (playerTeam != localTeam && playerTeam < 2) {
-			playercount++;
 			playerName = pris.Get(i).GetPlayerName().ToString();
 			goals = pris.Get(i).GetMatchGoals();
 			assists = pris.Get(i).GetMatchAssists();
@@ -143,6 +146,8 @@ void RLStatSaver::gameEnd(std::string eventName)
 			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(playerID, playlistID);
 		}
 	}
+
+	
 
 	if (playlistID == 11) {
 

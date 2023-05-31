@@ -126,6 +126,7 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="RLStatSaver.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>

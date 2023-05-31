@@ -13,16 +13,29 @@ void RLStatSaver::onLoad()
 {
 	_globalCvarManager = cvarManager;
 	LOG("Hello im Statsaver plugin");
-
+	gameWrapper->HookEvent("Function ProjectX.GRI_X.EventGameStarted", std::bind(&RLStatSaver::gameStart, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.EventMatchEnded", std::bind(&RLStatSaver::gameEnd, this, std::placeholders::_1));
 
-
+	// Hook into MMR tracking (i think?)
 	notifierToken = gameWrapper->GetMMRWrapper().RegisterMMRNotifier(
 		[this](UniqueIDWrapper id) {
 			float mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(id, 11);
 			LOG("{} MMR is: {}", id.GetIdString(), mmr);
 		}
 	);
+	//  We need the params so we hook with caller, but there is no wrapper for the HUD
+	gameWrapper->HookEventWithCallerPost<ServerWrapper>("Function TAGame.GFxHUD_TA.HandleStatTickerMessage",
+		[this](ServerWrapper caller, void* params, std::string eventname) {
+			onStatTickerMessage(params);
+		});
+
+	// hooked whenever the primary player earns a stat
+	gameWrapper->HookEventWithCallerPost<ServerWrapper>("Function TAGame.GFxHUD_TA.HandleStatEvent",
+		[this](ServerWrapper caller, void* params, std::string eventname) {
+			onStatEvent(params);
+		});
+
+
 
 	//cvarManager->log("Plugin loaded!");
 
@@ -213,6 +226,11 @@ std::string playlistIDtoName(int playlistNumber) {
 	}
 }
 
+void RLStatSaver::gameStart(std::string eventName)
+{
+
+}
+
 void RLStatSaver::gameEnd(std::string eventName)
 {
 	// If not in an online game, return.
@@ -224,10 +242,10 @@ void RLStatSaver::gameEnd(std::string eventName)
 	GameSettingPlaylistWrapper playlist = server.GetPlaylist();
 	if (!playlist) { return; }
 
-	int playlistID = playlist.GetPlaylistId();
 
 	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
 
+	int playlistID = playlist.GetPlaylistId();
 	int lobbySize = pris.Count();
 	int localPlayerPRI;
 	int localTeam;
@@ -353,5 +371,37 @@ void RLStatSaver::gameEnd(std::string eventName)
 	stream << "\n\n";
 }
 
+// The structure of a ticker stat event
+struct StatTickerParams {
+	// person who got a stat
+	uintptr_t Receiver;
+	// person who is victim of a stat (only exists for demos afaik)
+	uintptr_t Victim;
+	// wrapper for the stat event
+	uintptr_t StatEvent;
+};
 
+// structure of a stat event
+struct StatEventParams {
+	// always primary player
+	uintptr_t PRI;
+	// wrapper for the stat event
+	uintptr_t StatEvent;
+};
 
+void RLStatSaver::onStatTickerMessage(void* params) {
+	StatTickerParams* pStruct = (StatTickerParams*)params;
+	PriWrapper receiver = PriWrapper(pStruct->Receiver);
+	PriWrapper victim = PriWrapper(pStruct->Victim);
+	StatEventWrapper statEvent = StatEventWrapper(pStruct->StatEvent);
+	if (victim) {
+		LOG(victim.GetPlayerName().ToString());
+	}
+}
+
+void RLStatSaver::onStatEvent(void* params) {
+	StatEventParams* pStruct = (StatEventParams*)params;
+	PriWrapper playerPRI = PriWrapper(pStruct->PRI);
+	StatEventWrapper statEvent = StatEventWrapper(pStruct->StatEvent);
+	//LOG(playerPRI.GetPlayerName().ToString());
+}

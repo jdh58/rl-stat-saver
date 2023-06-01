@@ -480,11 +480,7 @@ void RLStatSaver::onStatTickerMessage(void* params) {
 	if (statEvent.GetEventName() == "Demolish") {
 		for (int i = 0; i < lobbySize; i++) {
 			if (players[i].playerID == receiver.GetPlayerID()) {
-				LOG(players[i].playerName);
-				LOG(std::to_string(players[i].demos));
-				LOG("DEMOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOS");
 				players[i].demos = players[i].demos + 1;
-				LOG(std::to_string(players[i].demos));
 			}
 		}
 	}

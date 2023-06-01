@@ -405,9 +405,22 @@ void RLStatSaver::gameEnd(std::string eventName)
 	// Fill the top row with the proper labels
 	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "MVP, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
 
+	// Iterate through until you get to the local user, and output their stats first
+	for (int i = 0; i < lobbySize; i++) {
+		bool isLocalPlayer = pris.Get(i).IsLocalPlayerPRI();
+		if (isLocalPlayer) {
+			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
+				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
+				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
+				<< players[i].MMR << ", " << playerTeamGoals << ", " << playerWorL << ", " << timestamp << ", "
+				<< players[i].uniqueID << "\n";
+		}
+	}
+
 	// Iterate through each teammate and output the results
 	for (int i = 0; i < lobbySize; i++) {
-		if (players[i].playerTeam == localTeam) {
+		bool isLocalPlayer = pris.Get(i).IsLocalPlayerPRI();
+		if (!isLocalPlayer && players[i].playerTeam == localTeam) {
 			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
 				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
@@ -520,4 +533,5 @@ void RLStatSaver::updateStats()
 			}
 		}
 	}
+	return;
 }

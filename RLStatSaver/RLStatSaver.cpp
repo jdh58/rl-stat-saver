@@ -9,12 +9,34 @@ BAKKESMOD_PLUGIN(RLStatSaver, "Stat Saver", plugin_version, PLUGINTYPE_FREEPLAY)
 
 std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
 
+// Declaring these globally so i can access them anywhere
+int playlistID = 0;
+int lobbySize = 0;
+int localTeam = 0;
+int localPlayerID = 0;
+int playerTeam = 0;
+int playercount = 0;
+std::string playerName = "";
+int goals = 0;
+int assists = 0;
+int saves = 0;
+int shots = 0;
+int demos = 0;
+int mvp = 0;
+int score = 0;
+int playerID = 0;
+float oldMMR = 0;
+float newMMR = 0;
+// Max players is 8, so just set the array to that becaause idc
+Player players[8];
+
 void RLStatSaver::onLoad()
 {
 	_globalCvarManager = cvarManager;
 	LOG("Hello im Statsaver plugin");
 	gameWrapper->HookEvent("Function ProjectX.GRI_X.EventGameStarted", std::bind(&RLStatSaver::gameStart, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.EventMatchEnded", std::bind(&RLStatSaver::gameEnd, this, std::placeholders::_1));
+	
 
 	// Hook into MMR tracking (i think?)
 	notifierToken = gameWrapper->GetMMRWrapper().RegisterMMRNotifier(
@@ -221,17 +243,12 @@ std::string playlistIDtoName(int playlistNumber) {
 	default:
 		playlistName = "Invalid_Playlist";
 		break;
-
-		return playlistName;
 	}
+
+	return playlistName;
 }
 
 void RLStatSaver::gameStart(std::string eventName)
-{
-
-}
-
-void RLStatSaver::gameEnd(std::string eventName)
 {
 	// If not in an online game, return.
 	if (!gameWrapper->IsInOnlineGame()) { return; }
@@ -245,26 +262,23 @@ void RLStatSaver::gameEnd(std::string eventName)
 
 	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
 
-	int playlistID = playlist.GetPlaylistId();
-	int lobbySize = pris.Count();
-	int localPlayerPRI;
-	int localTeam;
-	int localPlayerID;
-	int playerTeam = 0;
-	int playercount = 0;
-	std::string playerName = "";
-	int goals = 0;
-	int assists = 0;
-	int saves = 0;
-	int shots = 0;
-	int demos = 0;
-	int mvp = 0;
-	int score = 0;
-	int playerID = 0;
-	float mmr = 0;
-
-	// Max players is 8, so just set the array to that becaause idc
-	Player players[8];
+	playlistID = playlist.GetPlaylistId();
+	lobbySize = pris.Count();
+	localTeam;
+	localPlayerID;
+	playerTeam = 0;
+	playercount = 0;
+	playerName = "";
+	goals = 0;
+	assists = 0;
+	saves = 0;
+	shots = 0;
+	demos = 0;
+	mvp = 0;
+	score = 0;
+	playerID = 0;
+	oldMMR = 0;
+	newMMR = 0;
 
 	// Get the local player instance and local team
 	for (int i = 0; i < pris.Count(); i++) {
@@ -272,7 +286,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 
 		if (isLocalPlayer) {
 			localTeam = pris.Get(i).GetTeamNum();
-			localPlayerPRI = i;
 			localPlayerID = pris.Get(i).GetPlayerID();
 		}
 	}
@@ -291,13 +304,83 @@ void RLStatSaver::gameEnd(std::string eventName)
 			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
-			mmr = gameWrapper->GetMMRWrapper().GetPlayerMMR(
+			oldMMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
 				pris.Get(i).GetUniqueIdWrapper(),
 				gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
-			LOG(std::to_string(mmr));
+			LOG(std::to_string(oldMMR));
 
 			// Create a new player object and put it in the array
-			Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID);
+			Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, oldMMR, newMMR);
+			players[i] = thisPlayer;
+		}
+	}
+}
+
+void RLStatSaver::gameEnd(std::string eventName)
+{
+	// If not in an online game, return.
+	if (!gameWrapper->IsInOnlineGame()) { return; }
+
+	ServerWrapper server = gameWrapper->GetCurrentGameState();
+	if (!server) { return; }
+
+	GameSettingPlaylistWrapper playlist = server.GetPlaylist();
+	if (!playlist) { return; }
+
+
+	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
+
+	int playlistID = playlist.GetPlaylistId();
+	int lobbySize = pris.Count();
+	int localTeam;
+	int localPlayerID;
+	int playerTeam = 0;
+	int playercount = 0;
+	std::string playerName = "";
+	int goals = 0;
+	int assists = 0;
+	int saves = 0;
+	int shots = 0;
+	int demos = 0;
+	int mvp = 0;
+	int score = 0;
+	int playerID = 0;
+	float oldMMR = 0;
+
+	// Max players is 8, so just set the array to that becaause idc
+	
+
+	// Get the local player instance and local team
+	for (int i = 0; i < pris.Count(); i++) {
+		bool isLocalPlayer = pris.Get(i).IsLocalPlayerPRI();
+
+		if (isLocalPlayer) {
+			localTeam = pris.Get(i).GetTeamNum();
+			localPlayerID = pris.Get(i).GetPlayerID();
+		}
+	}
+
+
+	// This will create a player instance for each player
+	for (int i = 0; i < pris.Count(); i++) {
+		playerTeam = pris.Get(i).GetTeamNum();
+		if (playerTeam < 2) {
+			playerName = pris.Get(i).GetPlayerName().ToString();
+			goals = pris.Get(i).GetMatchGoals();
+			assists = pris.Get(i).GetMatchAssists();
+			saves = pris.Get(i).GetMatchSaves();
+			shots = pris.Get(i).GetMatchShots();
+			demos = pris.Get(i).GetMatchDemolishes();
+			mvp = pris.Get(i).GetbMatchMVP();
+			score = pris.Get(i).GetMatchScore();
+			playerID = pris.Get(i).GetPlayerID();
+			oldMMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
+				pris.Get(i).GetUniqueIdWrapper(),
+				gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
+			LOG(std::to_string(oldMMR));
+
+			// Create a new player object and put it in the array
+			Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, oldMMR, newMMR);
 			players[i] = thisPlayer;
 		}
 	}
@@ -394,14 +477,25 @@ void RLStatSaver::onStatTickerMessage(void* params) {
 	PriWrapper receiver = PriWrapper(pStruct->Receiver);
 	PriWrapper victim = PriWrapper(pStruct->Victim);
 	StatEventWrapper statEvent = StatEventWrapper(pStruct->StatEvent);
-	if (victim) {
-		LOG(victim.GetPlayerName().ToString());
+
+
+	// Demos don't track, so we have to track them manually
+	if (statEvent.GetEventName() == "Demolish") {
+		for (int i = 0; i < lobbySize; i++) {
+			if (players[i].playerID == receiver.GetPlayerID()) {
+				players[i].demos = players[i].demos + 1;
+				LOG(std::to_string(players[i].demos));
+			}
+		}
 	}
+
+	// On each stat event, update all the stats for each player (to prevent them from leaving and not being tracked)
+
 }
 
 void RLStatSaver::onStatEvent(void* params) {
 	StatEventParams* pStruct = (StatEventParams*)params;
 	PriWrapper playerPRI = PriWrapper(pStruct->PRI);
 	StatEventWrapper statEvent = StatEventWrapper(pStruct->StatEvent);
-	//LOG(playerPRI.GetPlayerName().ToString());
+
 }

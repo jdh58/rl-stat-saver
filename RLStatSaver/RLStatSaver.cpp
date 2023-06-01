@@ -6,7 +6,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
-
+#include <filesystem>
 
 BAKKESMOD_PLUGIN(RLStatSaver, "Stat Saver", plugin_version, PLUGINTYPE_FREEPLAY)
 
@@ -395,6 +395,8 @@ void RLStatSaver::gameEnd(std::string eventName)
 		opponentTeamColor = "Blue";
 	}
 
+	LOG("GOT TEAM COLOr AND UPADTED LASTLY");
+
 	// Get the current date and format it as a timestamp
 	// Get current time
     std::time_t currentTime = std::time(nullptr);
@@ -406,14 +408,30 @@ void RLStatSaver::gameEnd(std::string eventName)
     std::ostringstream oss;
     oss << std::put_time(localTime, "%m/%d/%Y %H:%M");
     std::string timestamp = oss.str();
-	oss << std::put_time(localTime, "%Y");
-	std::string year = oss.str();
+
+	// Extract the year
+	std::ostringstream yearStream;
+	yearStream << std::put_time(localTime, "%Y");
+	std::string year = yearStream.str();
+
+	LOG(year);
+	LOG(timestamp);
 
 	// Javascript clears i dont care nerds new Date() >>>>> this crap
 
-	// Get the playlist in an easy to read format
+	// Get the playlist name in a string
 	std::string playlistName = playlistIDtoName(playlistID);
 	std::string fileName = playlistName + ".csv";
+
+	// Create the RLStatSaver directory if it doesn't exist
+	std::filesystem::path rlStatSaverDirPath = (gameWrapper->GetDataFolder() / "RLStatSaver");
+	std::filesystem::create_directory(rlStatSaverDirPath);
+
+	// Create the year directory if it doesn't exist
+	std::filesystem::path yearDirPath = rlStatSaverDirPath / year;
+	std::filesystem::create_directory(yearDirPath);
+
+	LOG("CREATED DIRS");
 
 	// Output the results in a .csv file
 	std::ofstream stream(gameWrapper->GetDataFolder() / "RLStatSaver" / year / fileName, std::ios_base::app);

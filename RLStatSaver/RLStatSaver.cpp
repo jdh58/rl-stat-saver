@@ -279,6 +279,12 @@ void RLStatSaver::gameStart(std::string eventName)
 	playerID = 0;
 	MMR = 0;
 
+	int totalScore = 0;
+
+	for (int i = 0; i < pris.Count(); i++) {
+		totalScore += pris.Get(i).GetMatchGoals();
+	}
+
 	// Get the local player instance and local team
 	for (int i = 0; i < pris.Count(); i++) {
 		bool isLocalPlayer = pris.Get(i).IsLocalPlayerPRI();
@@ -288,35 +294,40 @@ void RLStatSaver::gameStart(std::string eventName)
 		}
 	}
 
-	// This will create a player instance for each player
-	for (int i = 0; i < pris.Count(); i++) {
-		playerTeam = pris.Get(i).GetTeamNum();
-		if (playerTeam < 2) {
-			playerName = pris.Get(i).GetPlayerName().ToString();
-			goals = pris.Get(i).GetMatchGoals();
-			assists = pris.Get(i).GetMatchAssists();
-			saves = pris.Get(i).GetMatchSaves();
-			shots = pris.Get(i).GetMatchShots();
-			demos = pris.Get(i).GetMatchDemolishes();
-			mvp = pris.Get(i).GetbMatchMVP();
-			score = pris.Get(i).GetMatchScore();
-			playerID = pris.Get(i).GetPlayerID();
-			uniqueID = pris.Get(i).GetUniqueIdWrapper().GetIdString();
-	
-			// Get MMR only if teammates
-			if (pris.Get(i).GetTeamNum() == localTeam) {
-				MMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
-					pris.Get(i).GetUniqueIdWrapper(),
-					gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
-			}
-			else {
-				MMR = 0;
-			}
+	if (totalScore <= 0) {
+		// This will create a player instance for each player
+		for (int i = 0; i < pris.Count(); i++) {
+			playerTeam = pris.Get(i).GetTeamNum();
+			if (playerTeam < 2) {
+				playerName = pris.Get(i).GetPlayerName().ToString();
+				goals = pris.Get(i).GetMatchGoals();
+				assists = pris.Get(i).GetMatchAssists();
+				saves = pris.Get(i).GetMatchSaves();
+				shots = pris.Get(i).GetMatchShots();
+				demos = pris.Get(i).GetMatchDemolishes();
+				mvp = pris.Get(i).GetbMatchMVP();
+				score = pris.Get(i).GetMatchScore();
+				playerID = pris.Get(i).GetPlayerID();
+				uniqueID = pris.Get(i).GetUniqueIdWrapper().GetIdString();
 
-			// Create a new player object and put it in the array
-			Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, uniqueID, MMR);
-			players[i] = thisPlayer;
+				// Get MMR only if teammates
+				if (pris.Get(i).GetTeamNum() == localTeam) {
+					MMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
+						pris.Get(i).GetUniqueIdWrapper(),
+						gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
+				}
+				else {
+					MMR = 0;
+				}
+
+				// Create a new player object and put it in the array
+				Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, uniqueID, MMR);
+				players[i] = thisPlayer;
+			}
 		}
+	}
+	else {
+		updateStats();
 	}
 }
 
@@ -472,7 +483,11 @@ void RLStatSaver::onStatTickerMessage(void* params) {
 	if (statEvent.GetEventName() == "Demolish") {
 		for (int i = 0; i < lobbySize; i++) {
 			if (players[i].playerID == receiver.GetPlayerID()) {
+				LOG(players[i].playerName);
+				LOG(std::to_string(players[i].demos));
+				LOG("DEMOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOS");
 				players[i].demos = players[i].demos + 1;
+				LOG(std::to_string(players[i].demos));
 			}
 		}
 	}

@@ -330,38 +330,8 @@ void RLStatSaver::gameEnd(std::string eventName)
 
 	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
 
-	int playlistID = playlist.GetPlaylistId();
-	int lobbySize = pris.Count();
-	int localTeam;
-	int localPlayerID;
-	int playerTeam = 0;
-	int playercount = 0;
-	std::string playerName = "";
-	int goals = 0;
-	int assists = 0;
-	int saves = 0;
-	int shots = 0;
-	int demos = 0;
-	int mvp = 0;
-	int score = 0;
-	int playerID = 0;
-	float oldMMR = 0;
-
-	// Max players is 8, so just set the array to that becaause idc
-	
-
-	// Get the local player instance and local team
-	for (int i = 0; i < pris.Count(); i++) {
-		bool isLocalPlayer = pris.Get(i).IsLocalPlayerPRI();
-
-		if (isLocalPlayer) {
-			localTeam = pris.Get(i).GetTeamNum();
-			localPlayerID = pris.Get(i).GetPlayerID();
-		}
-	}
-
-
-	// This will create a player instance for each player
+	// First, calculate each player's new MMR
+	// This will update the player instance for each player
 	for (int i = 0; i < pris.Count(); i++) {
 		playerTeam = pris.Get(i).GetTeamNum();
 		if (playerTeam < 2) {
@@ -370,18 +340,26 @@ void RLStatSaver::gameEnd(std::string eventName)
 			assists = pris.Get(i).GetMatchAssists();
 			saves = pris.Get(i).GetMatchSaves();
 			shots = pris.Get(i).GetMatchShots();
-			demos = pris.Get(i).GetMatchDemolishes();
 			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
-			oldMMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
+			newMMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
 				pris.Get(i).GetUniqueIdWrapper(),
 				gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
-			LOG(std::to_string(oldMMR));
 
-			// Create a new player object and put it in the array
-			Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, oldMMR, newMMR);
-			players[i] = thisPlayer;
+			// Check if this is the same player we are updating.
+			// This is to prevent a case where, for example, Player 3 leaves the game, and we overwrite Player 3's stats with Player 4's
+			// By iterating through the max lobby size we we will always find the correct match.
+			for (int j = 0; j < lobbySize; j++) {
+				if (playerID == players[j].playerID) {
+					// Save the old MMR from the existing player
+					float thisOldMMR = players[j].oldMMR;
+					// Create a new player object and put it in the array
+					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, thisOldMMR, newMMR);
+					players[j] = thisPlayer;
+					break;
+				}
+			}
 		}
 	}
 
@@ -478,6 +456,16 @@ void RLStatSaver::onStatTickerMessage(void* params) {
 	PriWrapper victim = PriWrapper(pStruct->Victim);
 	StatEventWrapper statEvent = StatEventWrapper(pStruct->StatEvent);
 
+	// If not in an online game, return.
+	if (!gameWrapper->IsInOnlineGame()) { return; }
+
+	ServerWrapper server = gameWrapper->GetCurrentGameState();
+	if (!server) { return; }
+
+	GameSettingPlaylistWrapper playlist = server.GetPlaylist();
+	if (!playlist) { return; }
+
+	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
 
 	// Demos don't track, so we have to track them manually
 	if (statEvent.GetEventName() == "Demolish") {
@@ -491,6 +479,36 @@ void RLStatSaver::onStatTickerMessage(void* params) {
 
 	// On each stat event, update all the stats for each player (to prevent them from leaving and not being tracked)
 
+	// This will update the player instance for each player
+	for (int i = 0; i < pris.Count(); i++) {
+		playerTeam = pris.Get(i).GetTeamNum();
+		if (playerTeam < 2) {
+			playerName = pris.Get(i).GetPlayerName().ToString();
+			goals = pris.Get(i).GetMatchGoals();
+			assists = pris.Get(i).GetMatchAssists();
+			saves = pris.Get(i).GetMatchSaves();
+			shots = pris.Get(i).GetMatchShots();
+			mvp = pris.Get(i).GetbMatchMVP();
+			score = pris.Get(i).GetMatchScore();
+			playerID = pris.Get(i).GetPlayerID();
+			oldMMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
+				pris.Get(i).GetUniqueIdWrapper(),
+				gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
+			LOG(std::to_string(oldMMR));
+
+			// Check if this is the same player we are updating.
+			// This is to prevent a case where, for example, Player 3 leaves the game, and we overwrite Player 3's stats with Player 4's
+			// By iterating through the max lobby size we we will always find the correct match.
+			for (int j = 0; j < lobbySize; j++) {
+				if (playerID == players[j].playerID) {
+					// Create a new player object and put it in the array
+					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, oldMMR, newMMR);
+					players[j] = thisPlayer;
+					break;
+				}
+			}
+		}
+	}
 }
 
 void RLStatSaver::onStatEvent(void* params) {
@@ -498,4 +516,48 @@ void RLStatSaver::onStatEvent(void* params) {
 	PriWrapper playerPRI = PriWrapper(pStruct->PRI);
 	StatEventWrapper statEvent = StatEventWrapper(pStruct->StatEvent);
 
+	// If not in an online game, return.
+	if (!gameWrapper->IsInOnlineGame()) { return; }
+
+	ServerWrapper server = gameWrapper->GetCurrentGameState();
+	if (!server) { return; }
+
+	GameSettingPlaylistWrapper playlist = server.GetPlaylist();
+	if (!playlist) { return; }
+
+
+	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
+
+	// On each stat event, update all the stats for each player (to prevent them from leaving and not being tracked)
+
+	// This will update the player instance for each player
+	for (int i = 0; i < pris.Count(); i++) {
+		playerTeam = pris.Get(i).GetTeamNum();
+		if (playerTeam < 2) {
+			playerName = pris.Get(i).GetPlayerName().ToString();
+			goals = pris.Get(i).GetMatchGoals();
+			assists = pris.Get(i).GetMatchAssists();
+			saves = pris.Get(i).GetMatchSaves();
+			shots = pris.Get(i).GetMatchShots();
+			mvp = pris.Get(i).GetbMatchMVP();
+			score = pris.Get(i).GetMatchScore();
+			playerID = pris.Get(i).GetPlayerID();
+			oldMMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
+				pris.Get(i).GetUniqueIdWrapper(),
+				gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
+			LOG(std::to_string(oldMMR));
+
+			// Check if this is the same player we are updating.
+			// This is to prevent a case where, for example, Player 3 leaves the game, and we overwrite Player 3's stats with Player 4's
+			// By iterating through the max lobby size we we will always find the correct match.
+			for (int j = 0; j < lobbySize; j++) {
+				if (playerID == players[j].playerID) {
+					// Create a new player object and put it in the array
+					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, oldMMR, newMMR);
+					players[j] = thisPlayer;
+					break;
+				}
+			}
+		}
+	}
 }

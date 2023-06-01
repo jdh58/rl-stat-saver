@@ -36,7 +36,6 @@ Player players[8];
 void RLStatSaver::onLoad()
 {
 	_globalCvarManager = cvarManager;
-	LOG("Hello im Statsaver plugin");
 	gameWrapper->HookEvent("Function ProjectX.GRI_X.EventGameStarted", std::bind(&RLStatSaver::gameStart, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.EventMatchEnded", std::bind(&RLStatSaver::gameEnd, this, std::placeholders::_1));
 	
@@ -98,7 +97,6 @@ void RLStatSaver::onLoad()
 
 void RLStatSaver::onUnload()
 {
-	LOG("Goodbye i was statsaver plugin");
 }
 
 std::string playlistIDtoName(int playlistNumber) {
@@ -395,8 +393,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 		opponentTeamColor = "Blue";
 	}
 
-	LOG("GOT TEAM COLOr AND UPADTED LASTLY");
-
 	// Get the current date and format it as a timestamp
 	// Get current time
     std::time_t currentTime = std::time(nullptr);
@@ -414,9 +410,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 	yearStream << std::put_time(localTime, "%Y");
 	std::string year = yearStream.str();
 
-	LOG(year);
-	LOG(timestamp);
-
 	// Javascript clears i dont care nerds new Date() >>>>> this crap
 
 	// Get the playlist name in a string
@@ -430,8 +423,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 	// Create the year directory if it doesn't exist
 	std::filesystem::path yearDirPath = rlStatSaverDirPath / year;
 	std::filesystem::create_directory(yearDirPath);
-
-	LOG("CREATED DIRS");
 
 	// Output the results in a .csv file
 	std::ofstream stream(gameWrapper->GetDataFolder() / "RLStatSaver" / year / fileName, std::ios_base::app);

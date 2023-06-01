@@ -2,7 +2,10 @@
 #include "RLStatSaver.h"
 #include "Player.h"
 #include "fstream"
+#include <iostream>
+#include <ctime>
 #include <iomanip>
+#include <sstream>
 
 
 BAKKESMOD_PLUGIN(RLStatSaver, "Stat Saver", plugin_version, PLUGINTYPE_FREEPLAY)
@@ -392,16 +395,31 @@ void RLStatSaver::gameEnd(std::string eventName)
 		opponentTeamColor = "Blue";
 	}
 
+	// Get the current date and format it as a timestamp
+	// Get current time
+    std::time_t currentTime = std::time(nullptr);
+
+    // Convert time to local time
+    std::tm* localTime = std::localtime(&currentTime);
+
+    // Format time as "MM/dd/yyyy hh:mm"
+    std::ostringstream oss;
+    oss << std::put_time(localTime, "%m/%d/%Y %H:%M");
+    std::string timestamp = oss.str();
+	oss << std::put_time(localTime, "%Y");
+	std::string year = oss.str();
+
+	// Javascript clears i dont care nerds new Date() >>>>> this crap
 
 	// Get the playlist in an easy to read format
 	std::string playlistName = playlistIDtoName(playlistID);
 	std::string fileName = playlistName + ".csv";
 
 	// Output the results in a .csv file
-	std::ofstream stream(gameWrapper->GetDataFolder() / fileName, std::ios_base::app);
+	std::ofstream stream(gameWrapper->GetDataFolder() / "RLStatSaver" / year / fileName, std::ios_base::app);
 
 	// Fill the top row with the proper labels
-	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "MVP, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L\n";
+	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "MVP, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP\n";
 
 	// Iterate through each teammate and output the results
 	for (int i = 0; i < lobbySize; i++) {
@@ -409,7 +427,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
 				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
-				<< players[i].MMR << ", " << playerTeamGoals << ", " << playerWorL << "\n";
+				<< players[i].MMR << ", " << playerTeamGoals << ", " << playerWorL << ", " << timestamp << "\n";
 		}
 	}
 
@@ -419,7 +437,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 			stream << opponentTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
 				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
-				<< players[i].MMR << ", " << opponentTeamGoals << ", " << opponentWorL << "\n";
+				<< players[i].MMR << ", " << opponentTeamGoals << ", " << opponentWorL << ", " << timestamp << "\n";
 		}
 	}
 

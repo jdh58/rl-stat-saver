@@ -8,7 +8,7 @@
 #include <sstream>
 #include <filesystem>
 
-BAKKESMOD_PLUGIN(RLStatSaver, "Stat Saver", plugin_version, PLUGINTYPE_FREEPLAY)
+BAKKESMOD_PLUGIN(RLStatSaver, "RLStatSaver", plugin_version, PLUGINTYPE_FREEPLAY)
 
 std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
 

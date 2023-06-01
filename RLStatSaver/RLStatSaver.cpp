@@ -25,8 +25,8 @@ int demos = 0;
 int mvp = 0;
 int score = 0;
 int playerID = 0;
-float oldMMR = 0;
-float newMMR = 0;
+float MMR = 0;
+
 // Max players is 8, so just set the array to that becaause idc
 Player players[8];
 
@@ -277,8 +277,7 @@ void RLStatSaver::gameStart(std::string eventName)
 	mvp = 0;
 	score = 0;
 	playerID = 0;
-	oldMMR = 0;
-	newMMR = 0;
+	MMR = 0;
 
 	// Get the local player instance and local team
 	for (int i = 0; i < pris.Count(); i++) {
@@ -304,13 +303,12 @@ void RLStatSaver::gameStart(std::string eventName)
 			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
-			oldMMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
+			MMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
 				pris.Get(i).GetUniqueIdWrapper(),
 				gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
-			LOG(std::to_string(oldMMR));
 
 			// Create a new player object and put it in the array
-			Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, oldMMR, newMMR);
+			Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, MMR);
 			players[i] = thisPlayer;
 		}
 	}
@@ -327,11 +325,9 @@ void RLStatSaver::gameEnd(std::string eventName)
 	GameSettingPlaylistWrapper playlist = server.GetPlaylist();
 	if (!playlist) { return; }
 
-
 	ArrayWrapper<PriWrapper> pris = gameWrapper->GetOnlineGame().GetPRIs();
 
-	// First, calculate each player's new MMR
-	// This will update the player instance for each player
+	// This will be the final update for the player instances
 	for (int i = 0; i < pris.Count(); i++) {
 		playerTeam = pris.Get(i).GetTeamNum();
 		if (playerTeam < 2) {
@@ -343,19 +339,18 @@ void RLStatSaver::gameEnd(std::string eventName)
 			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
-			newMMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
-				pris.Get(i).GetUniqueIdWrapper(),
-				gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
 
 			// Check if this is the same player we are updating.
 			// This is to prevent a case where, for example, Player 3 leaves the game, and we overwrite Player 3's stats with Player 4's
 			// By iterating through the max lobby size we we will always find the correct match.
 			for (int j = 0; j < lobbySize; j++) {
 				if (playerID == players[j].playerID) {
+					// Once again copy the demos so we don't re-initialize to 0
+					int thisDemos = players[j].demos;
 					// Save the old MMR from the existing player
-					float thisOldMMR = players[j].oldMMR;
+					float thisMMR = players[j].MMR;
 					// Create a new player object and put it in the array
-					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, thisOldMMR, newMMR);
+					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, thisDemos, mvp, score, playerID, thisMMR);
 					players[j] = thisPlayer;
 					break;
 				}
@@ -406,7 +401,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	std::ofstream stream(gameWrapper->GetDataFolder() / fileName, std::ios_base::app);
 
 	// Fill the top row with the proper labels
-	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "MVP, " << "SCORE, " << "PLAYERID, " << "TEAM GOALS, " << "W/L\n";
+	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "MVP, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L\n";
 
 	// Iterate through each teammate and output the results
 	for (int i = 0; i < lobbySize; i++) {
@@ -414,7 +409,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
 				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
-				<< playerTeamGoals << ", " << playerWorL << "\n";
+				<< players[i].MMR << ", " << playerTeamGoals << ", " << playerWorL << "\n";
 		}
 	}
 
@@ -424,7 +419,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 			stream << opponentTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
 				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
-				<< opponentTeamGoals << ", " << opponentWorL << "\n";
+				<< players[i].MMR << ", " << opponentTeamGoals << ", " << opponentWorL << "\n";
 		}
 	}
 
@@ -472,7 +467,6 @@ void RLStatSaver::onStatTickerMessage(void* params) {
 		for (int i = 0; i < lobbySize; i++) {
 			if (players[i].playerID == receiver.GetPlayerID()) {
 				players[i].demos = players[i].demos + 1;
-				LOG(std::to_string(players[i].demos));
 			}
 		}
 	}
@@ -491,18 +485,16 @@ void RLStatSaver::onStatTickerMessage(void* params) {
 			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
-			oldMMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
-				pris.Get(i).GetUniqueIdWrapper(),
-				gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
-			LOG(std::to_string(oldMMR));
 
 			// Check if this is the same player we are updating.
 			// This is to prevent a case where, for example, Player 3 leaves the game, and we overwrite Player 3's stats with Player 4's
 			// By iterating through the max lobby size we we will always find the correct match.
 			for (int j = 0; j < lobbySize; j++) {
 				if (playerID == players[j].playerID) {
+					int thisDemos = players[j].demos;
+					float thisMMR = players[j].MMR;
 					// Create a new player object and put it in the array
-					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, oldMMR, newMMR);
+					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, thisDemos, mvp, score, playerID, thisMMR);
 					players[j] = thisPlayer;
 					break;
 				}
@@ -542,18 +534,18 @@ void RLStatSaver::onStatEvent(void* params) {
 			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
-			oldMMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
-				pris.Get(i).GetUniqueIdWrapper(),
-				gameWrapper->GetMMRWrapper().GetCurrentPlaylist());
-			LOG(std::to_string(oldMMR));
 
 			// Check if this is the same player we are updating.
 			// This is to prevent a case where, for example, Player 3 leaves the game, and we overwrite Player 3's stats with Player 4's
 			// By iterating through the max lobby size we we will always find the correct match.
 			for (int j = 0; j < lobbySize; j++) {
 				if (playerID == players[j].playerID) {
+					// Copy over the demos so we don't just re initialize to 0
+					int thisDemos = players[j].demos;
+					// Create the MMR to keep it consistent so we don't have to grab it again
+					float thisMMR = players[j].MMR;
 					// Create a new player object and put it in the array
-					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, oldMMR, newMMR);
+					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, thisDemos, mvp, score, playerID, thisMMR);
 					players[j] = thisPlayer;
 					break;
 				}

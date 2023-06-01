@@ -20,6 +20,7 @@ class RLStatSaver: public BakkesMod::Plugin::BakkesModPlugin/*, public BakkesMod
 	void gameEnd(std::string eventName);
 	void onStatTickerMessage(void* params);
 	void onStatEvent(void* params);
+	void updateStats();
 	std::unique_ptr<MMRNotifierToken> notifierToken;
 
 	// Inherited via PluginSettingsWindow

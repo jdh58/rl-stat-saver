@@ -24,7 +24,6 @@ int assists = 0;
 int saves = 0;
 int shots = 0;
 int demos = 0;
-int mvp = 0;
 int score = 0;
 int playerID = 0;
 std::string uniqueID;
@@ -274,7 +273,6 @@ void RLStatSaver::gameStart(std::string eventName)
 	saves = 0;
 	shots = 0;
 	demos = 0;
-	mvp = 0;
 	score = 0;
 	playerID = 0;
 	MMR = 0;
@@ -305,7 +303,6 @@ void RLStatSaver::gameStart(std::string eventName)
 				saves = pris.Get(i).GetMatchSaves();
 				shots = pris.Get(i).GetMatchShots();
 				demos = pris.Get(i).GetMatchDemolishes();
-				mvp = pris.Get(i).GetbMatchMVP();
 				score = pris.Get(i).GetMatchScore();
 				playerID = pris.Get(i).GetPlayerID();
 				uniqueID = pris.Get(i).GetUniqueIdWrapper().GetIdString();
@@ -321,7 +318,7 @@ void RLStatSaver::gameStart(std::string eventName)
 				}
 
 				// Create a new player object and put it in the array
-				Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, mvp, score, playerID, uniqueID, MMR);
+				Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, score, playerID, uniqueID, MMR);
 				players[i] = thisPlayer;
 			}
 		}
@@ -414,7 +411,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	std::ofstream stream(gameWrapper->GetDataFolder() / "RLStatSaver" / year / fileName, std::ios_base::app);
 
 	// Fill the top row with the proper labels
-	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "MVP, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
+	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "SCORE, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
 
 	// Iterate through until you get to the local user, and output their stats first
 	for (int i = 0; i < lobbySize; i++) {
@@ -422,7 +419,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 		if (isLocalPlayer) {
 			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
-				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
+				<< players[i].demos << ", " << players[i].score << ", "
 				<< players[i].MMR << ", " << playerTeamGoals << ", " << playerWorL << ", " << timestamp << ", "
 				<< players[i].uniqueID << "\n";
 		}
@@ -434,7 +431,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 		if (!isLocalPlayer && players[i].playerTeam == localTeam) {
 			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
-				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
+				<< players[i].demos << ", " << players[i].score << ", "
 				<< players[i].MMR << ", " << playerTeamGoals << ", " << playerWorL << ", " << timestamp << ", "
 				<< players[i].uniqueID << "\n";
 		}
@@ -445,7 +442,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 		if (players[i].playerTeam != localTeam) {
 			stream << opponentTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
-				<< players[i].demos << ", " << players[i].mvp << ", " << players[i].score << ", "
+				<< players[i].demos << ", " << players[i].score << ", "
 				<< players[i].MMR << ", " << opponentTeamGoals << ", " << opponentWorL << ", " << timestamp << ", "
 				<< players[i].uniqueID << "\n";
 		}
@@ -528,7 +525,6 @@ void RLStatSaver::updateStats()
 			assists = pris.Get(i).GetMatchAssists();
 			saves = pris.Get(i).GetMatchSaves();
 			shots = pris.Get(i).GetMatchShots();
-			mvp = pris.Get(i).GetbMatchMVP();
 			score = pris.Get(i).GetMatchScore();
 			playerID = pris.Get(i).GetPlayerID();
 			uniqueID = pris.Get(i).GetUniqueIdWrapper().GetIdString();
@@ -541,7 +537,7 @@ void RLStatSaver::updateStats()
 					int thisDemos = players[j].demos;
 					float thisMMR = players[j].MMR;
 					// Create a new player object and put it in the array
-					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, thisDemos, mvp, score, playerID, uniqueID, thisMMR);
+					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, thisDemos, score, playerID, uniqueID, thisMMR);
 					players[j] = thisPlayer;
 					break;
 				}

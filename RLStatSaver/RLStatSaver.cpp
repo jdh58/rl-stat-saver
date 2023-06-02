@@ -411,7 +411,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	std::ofstream stream(gameWrapper->GetDataFolder() / "RLStatSaver" / year / fileName, std::ios_base::app);
 
 	// Fill the top row with the proper labels
-	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "SCORE, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
+	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
 
 	// Iterate through until you get to the local user, and output their stats first
 	for (int i = 0; i < lobbySize; i++) {

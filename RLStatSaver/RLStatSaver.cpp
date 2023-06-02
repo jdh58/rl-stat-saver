@@ -410,6 +410,11 @@ void RLStatSaver::gameEnd(std::string eventName)
 	// Output the results in a .csv file
 	std::ofstream stream(gameWrapper->GetDataFolder() / "RLStatSaver" / year / fileName, std::ios_base::app);
 
+	// Final check to ensure the data is being saved correctly
+	if (playerTeamGoals <= 0 && opponentTeamGoals <= 0) {
+		return;
+	}
+
 	// Fill the top row with the proper labels
 	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
 

@@ -411,7 +411,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	std::ofstream stream(gameWrapper->GetDataFolder() / "RLStatSaver" / year / fileName, std::ios_base::app);
 
 	// Final check to ensure the data is being saved correctly
-	if (playerTeamGoals <= 0 && opponentTeamGoals <= 0) {
+	if (playerTeamGoals < 0 || opponentTeamGoals < 0) {
 		return;
 	}
 

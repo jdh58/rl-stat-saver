@@ -7,12 +7,13 @@
 #include <iomanip>
 #include <sstream>
 #include <filesystem>
+#include <pqxx/pqxx>
 
 BAKKESMOD_PLUGIN(RLStatSaver, "RLStatSaver", plugin_version, PLUGINTYPE_FREEPLAY)
 
 std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
 
-// Declaring these globally so i can access them anywhere
+// Declaring these globally so I can access them anywhere. This obviously isn't ideal but I had problems with a more principled route.
 int playlistID = 0;
 std::string playerTeamColor = "";
 int lobbySize = 0;
@@ -121,7 +122,8 @@ void RLStatSaver::onUnload()
 {
 }
 
-void outputToDatabase(std::string playlistName, int playerCount)
+
+void outputToDatabase(int playerTeamGoals, int opponentTeamGoals, std::string playerWorL, std::string opponentWorL, std::string timestamp, std::string playlistName, int playerCount)
 {
 	// Make sure the user filled out all these fields
 	if (postgreDB.size() <= 1 && postgreHost.size() <= 1 && postgrePort.size() <= 1 && postgreUser.size() <= 1 && postgrePassword.size() <= 1) {
@@ -130,15 +132,12 @@ void outputToDatabase(std::string playlistName, int playerCount)
 
 	try
 	{
-		pqxx::connection C("dbname=your_database user=your_username password=your_password hostaddr=your_host port=your_port");
+		pqxx::connection C("dbname=" + postgreDB + " user = " + postgreUser + " password = " + postgrePassword + " hostaddr = " + postgreHost + " port = " + postgrePort);
 
 		if (C.is_open())
 		{
 			// Ouput in the console that connection was successful
 			LOG("Connected to PostgreSQL database successfully!");
-
-			stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
-
 
 			// Create a table for the games if it doesn't already exist
 			pqxx::work txn0(conn);
@@ -152,24 +151,38 @@ void outputToDatabase(std::string playlistName, int playerCount)
 
 			// Create a table for the stats if it doesn't already exist
 			pqxx::work txn1(conn);
-			txn1.exec("CREATE TABLE IF NOT EXISTS stats (id SERIAL PRIMARY KEY, gameId INTEGER, team_color VARCHAR(6), name VARCHAR(100), goals VARCHAR(3), assists VARCHAR(3), \
-				saves VARCHAR(3), shots VARCHAR(3), demos VARCHAR(3), score VARCHAR(3), mmr VARCHAR(5), team_goals VARCHAR(3), win_or_loss VARCHAR(4), timestamp VARCHAR(50), \
-				player_id VARCHAR(100), playlist VARCHAR(3));");
+			txn1.exec("CREATE TABLE IF NOT EXISTS stats (id SERIAL PRIMARY KEY, gameId INTEGER, team_color VARCHAR(6), name VARCHAR(100), goals INTEGER, assists INTEGER, \
+				saves INTEGER, shots INTEGER, demos INTEGER, score INTEGER, mmr NUMERIC, team_goals INTEGER, win_or_loss VARCHAR(5), timestamp VARCHAR(50), \
+				player_id VARCHAR(100), playlist VARCHAR(50));");
 			txn1.commit();
 
+			// Now insert the game stats for each player into the stats table.
+
+			// First add the player and their teammates to the database
 			for (int i = 0; i < playerCount; i++) {
-				pqxx::work txn(conn);
-				txn1.exec("INSERT INTO stats (gameId, team_color, name, goals, assists, saves, shots, demos, score, mmr, team_goals, win_or_loss, timestamp, player_id, playlist) \
-				VALUES (" + std::to_string(gameId) + ", " + players[i].playerTeam + ", ");
-				txn1.commit();
+				if (players[i].playerTeam == localTeam) {
+					pqxx::work txn(conn);
+					txn.exec("INSERT INTO stats (gameId, team_color, name, goals, assists, saves, shots, demos, score, mmr, team_goals, win_or_loss, timestamp, player_id, playlist) \
+						VALUES (" + std::to_string(gameId) + ", " + players[i].playerTeamColor + ", " + players[i].playerName + ", " + std::to_string(players[i].goals) + ", " +
+						std::to_string(players[i].assists) + ", " + std::to_string(players[i].saves) + ", " + std::to_string(players[i].shots) + ", " + std::to_string(players[i].demos)
+						+ ", " + std::to_string(players[i].demos) + ", " + std::to_string(players[i].score) + ", " + std::to_string(players[i].MMR) + ", " + std::to_string(playerTeamGoals)
+						+ ", " + playerWorL + ", " + timestamp + ", " + players[i].uniqueID) + ")";
+					txn.commit();
+				}	
 			}
-			
 
-
-			// Insert the game stats as data into the table
-			pqxx::work txn2(conn);
-			txn2.exec("INSERT INTO test_table (data) VALUES ('Sample Data');");
-			txn2.commit();
+			// Now add the opponents to the database
+			for (int i = 0; i < playerCount; i++) {
+				if (players[i].playerTeam != localTeam) {
+					pqxx::work txn(conn);
+					txn.exec("INSERT INTO stats (gameId, team_color, name, goals, assists, saves, shots, demos, score, mmr, team_goals, win_or_loss, timestamp, player_id, playlist) \
+						VALUES (" + std::to_string(gameId) + ", " + players[i].playerTeamColor + ", " + players[i].playerName + ", " + std::to_string(players[i].goals) + ", " +
+						std::to_string(players[i].assists) + ", " + std::to_string(players[i].saves) + ", " + std::to_string(players[i].shots) + ", " + std::to_string(players[i].demos)
+						+ ", " + std::to_string(players[i].demos) + ", " + std::to_string(players[i].score) + ", " + std::to_string(players[i].MMR) + ", " + std::to_string(playerTeamGoals)
+						+ ", " + playerWorL + ", " + timestamp + ", " + players[i].uniqueID) + ")";
+					txn.commit();
+				}
+			}
 
 			C.disconnect();
 		}
@@ -177,12 +190,11 @@ void outputToDatabase(std::string playlistName, int playerCount)
 		{
 			// Output in the console that connection failed
 			LOG("Failed to connect to the PostgreSQL database!");
-			
 		}
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Error: " << e.what() << std::endl;
+		LOG("ERROR SAVING GAME DATA TO POSTGRESQL DATABASE")
 	}
 }
 
@@ -502,7 +514,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	}
 
 	// Try to output to the database if one is connected
-	outputToDatabase(playlistName, lobbySize);
+	outputToDatabase(playerTeamGoals, opponentTeamGoals, playerWorL, opponentWorL, timestamp, playlistName, lobbySize);
 
 	// Fill the top row with the proper labels
 	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
@@ -534,7 +546,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	// Iterate through each opponent and output the results
 	for (int i = 0; i < lobbySize; i++) {
 		if (players[i].playerTeam != localTeam) {
-			stream << opponentTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
+			stream << players[i].playerTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
 				<< players[i].demos << ", " << players[i].score << ", "
 				<< players[i].MMR << ", " << opponentTeamGoals << ", " << opponentWorL << ", " << timestamp << ", "

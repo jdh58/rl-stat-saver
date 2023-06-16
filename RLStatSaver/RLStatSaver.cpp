@@ -14,6 +14,7 @@ std::shared_ptr<CVarManagerWrapper> _globalCvarManager;
 
 // Declaring these globally so i can access them anywhere
 int playlistID = 0;
+std::string playerTeamColor = "";
 int lobbySize = 0;
 int localTeam = 0;
 int playerTeam = 0;
@@ -120,7 +121,7 @@ void RLStatSaver::onUnload()
 {
 }
 
-void outputToDatabase()
+void outputToDatabase(std::string playlistName, int playerCount)
 {
 	// Make sure the user filled out all these fields
 	if (postgreDB.size() <= 1 && postgreHost.size() <= 1 && postgrePort.size() <= 1 && postgreUser.size() <= 1 && postgrePassword.size() <= 1) {
@@ -136,11 +137,33 @@ void outputToDatabase()
 			// Ouput in the console that connection was successful
 			LOG("Connected to PostgreSQL database successfully!");
 
-			// Create a table for the games if it doesn't already exist
-			pqxx::work txn(conn);
-			txn.exec("CREATE TABLE IF NOT EXISTS games (id SERIAL PRIMARY KEY, data VARCHAR(3));");
-			txn.commit();
+			stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
 
+
+			// Create a table for the games if it doesn't already exist
+			pqxx::work txn0(conn);
+			txn0.exec("CREATE TABLE IF NOT EXISTS games (id SERIAL PRIMARY KEY");
+			txn0.commit();
+
+			// Grab the most recent gameId so we can link it to all the player rows we are adding for this game
+			pqxx::work txn1(conn);
+			int gameId = txn1.exec("SELECT * FROM games ORDER BY id DESC LIMIT 1");
+			txn1.commit();
+
+			// Create a table for the stats if it doesn't already exist
+			pqxx::work txn1(conn);
+			txn1.exec("CREATE TABLE IF NOT EXISTS stats (id SERIAL PRIMARY KEY, gameId INTEGER, team_color VARCHAR(6), name VARCHAR(100), goals VARCHAR(3), assists VARCHAR(3), \
+				saves VARCHAR(3), shots VARCHAR(3), demos VARCHAR(3), score VARCHAR(3), mmr VARCHAR(5), team_goals VARCHAR(3), win_or_loss VARCHAR(4), timestamp VARCHAR(50), \
+				player_id VARCHAR(100), playlist VARCHAR(3));");
+			txn1.commit();
+
+			for (int i = 0; i < playerCount; i++) {
+				pqxx::work txn(conn);
+				txn1.exec("INSERT INTO stats (gameId, team_color, name, goals, assists, saves, shots, demos, score, mmr, team_goals, win_or_loss, timestamp, player_id, playlist) \
+				VALUES (" + std::to_string(gameId) + ", " + players[i].playerTeam + ", ");
+				txn1.commit();
+			}
+			
 
 
 			// Insert the game stats as data into the table
@@ -373,6 +396,13 @@ void RLStatSaver::gameStart(std::string eventName)
 				playerID = pris.Get(i).GetPlayerID();
 				uniqueID = pris.Get(i).GetUniqueIdWrapper().GetIdString();
 
+				// Get player team color
+				if (playerTeam == 0) {
+					playerTeamColor = "Blue";
+				} else {
+					playerTeamColor = "Orange";
+				}
+
 				// Get MMR only if teammates
 				if (pris.Get(i).GetTeamNum() == localTeam) {
 					MMR = gameWrapper->GetMMRWrapper().GetPlayerMMR(
@@ -384,7 +414,7 @@ void RLStatSaver::gameStart(std::string eventName)
 				}
 
 				// Create a new player object and put it in the array
-				Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, demos, score, playerID, uniqueID, MMR);
+				Player thisPlayer = Player(playerTeam, playerTeamColor, playerName, goals, assists, saves, shots, demos, score, playerID, uniqueID, MMR);
 				players[i] = thisPlayer;
 			}
 		}
@@ -433,16 +463,6 @@ void RLStatSaver::gameEnd(std::string eventName)
 		opponentWorL = "WIN";
 	}
 
-	std::string localTeamColor;
-	std::string opponentTeamColor;
-	if (localTeam == 0) {
-		localTeamColor = "Blue";
-		opponentTeamColor = "Orange";
-	} else {
-		localTeamColor = "Orange";
-		opponentTeamColor = "Blue";
-	}
-
 	// Get the current date and format it as a timestamp
 	// Get current time
     std::time_t currentTime = std::time(nullptr);
@@ -482,7 +502,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	}
 
 	// Try to output to the database if one is connected
-	outputToDatabase();
+	outputToDatabase(playlistName, lobbySize);
 
 	// Fill the top row with the proper labels
 	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
@@ -491,7 +511,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	for (int i = 0; i < lobbySize; i++) {
 		bool isLocalPlayer = pris.Get(i).IsLocalPlayerPRI();
 		if (isLocalPlayer) {
-			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
+			stream << players[i].playerTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
 				<< players[i].demos << ", " << players[i].score << ", "
 				<< players[i].MMR << ", " << playerTeamGoals << ", " << playerWorL << ", " << timestamp << ", "
@@ -503,7 +523,7 @@ void RLStatSaver::gameEnd(std::string eventName)
 	for (int i = 0; i < lobbySize; i++) {
 		bool isLocalPlayer = pris.Get(i).IsLocalPlayerPRI();
 		if (!isLocalPlayer && players[i].playerTeam == localTeam) {
-			stream << localTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
+			stream << players[i].playerTeamColor << ", " << players[i].playerName << ", " << players[i].goals << ", "
 				<< players[i].assists << ", " << players[i].saves << ", " << players[i].shots << ", "
 				<< players[i].demos << ", " << players[i].score << ", "
 				<< players[i].MMR << ", " << playerTeamGoals << ", " << playerWorL << ", " << timestamp << ", "
@@ -599,6 +619,14 @@ void RLStatSaver::updateStats()
 			playerID = pris.Get(i).GetPlayerID();
 			uniqueID = pris.Get(i).GetUniqueIdWrapper().GetIdString();
 
+			// Get player team color
+			if (playerTeam == 0) {
+				playerTeamColor = "Blue";
+			}
+			else {
+				playerTeamColor = "Orange";
+			}
+
 			// Check if this is the same player we are updating.
 			// This is to prevent a case where, for example, Player 3 leaves the game, and we overwrite Player 3's stats with Player 4's
 			// By iterating through the max lobby size we we will always find the correct match.
@@ -607,7 +635,7 @@ void RLStatSaver::updateStats()
 					int thisDemos = players[j].demos;
 					float thisMMR = players[j].MMR;
 					// Create a new player object and put it in the array
-					Player thisPlayer = Player(playerTeam, playerName, goals, assists, saves, shots, thisDemos, score, playerID, uniqueID, thisMMR);
+					Player thisPlayer = Player(playerTeam, playerTeamColor, playerName, goals, assists, saves, shots, thisDemos, score, playerID, uniqueID, thisMMR);
 					players[j] = thisPlayer;
 					break;
 				}

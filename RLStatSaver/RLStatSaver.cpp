@@ -29,6 +29,12 @@ int playerID = 0;
 std::string uniqueID;
 float MMR = 0;
 
+std::string postgreDB;
+std::string postgreHost;
+std::string postgrePort;
+std::string postgreUser;
+std::string postgrePassword;
+
 // Max players is 8, so just set the array to that because idc
 Player players[8];
 
@@ -37,6 +43,22 @@ void RLStatSaver::onLoad()
 	_globalCvarManager = cvarManager;
 	gameWrapper->HookEvent("Function ProjectX.GRI_X.EventGameStarted", std::bind(&RLStatSaver::gameStart, this, std::placeholders::_1));
 	gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.EventMatchEnded", std::bind(&RLStatSaver::gameEnd, this, std::placeholders::_1));
+
+	cvarManager->registerCvar("dbname", "").addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
+		postgreDB = cvar.getStringValue();
+		});;
+	cvarManager->registerCvar("host", "").addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
+		postgreHost = cvar.getStringValue();
+		});;
+	cvarManager->registerCvar("port", "").addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
+		postgrePort = cvar.getStringValue();
+		});;
+	cvarManager->registerCvar("user", "").addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
+		postgreUser = cvar.getStringValue();
+		});;
+	cvarManager->registerCvar("password", "").addOnValueChanged([this](std::string oldValue, CVarWrapper cvar) {
+		postgrePassword = cvar.getStringValue();
+		});;
 	
 
 	// Hook into MMR tracking (i think?)
@@ -98,7 +120,51 @@ void RLStatSaver::onUnload()
 {
 }
 
-std::string playlistIDtoName(int playlistNumber) {
+void outputToDatabase()
+{
+	// Make sure the user filled out all these fields
+	if (postgreDB.size() <= 1 && postgreHost.size() <= 1 && postgrePort.size() <= 1 && postgreUser.size() <= 1 && postgrePassword.size() <= 1) {
+		return;
+	}
+
+	try
+	{
+		pqxx::connection C("dbname=your_database user=your_username password=your_password hostaddr=your_host port=your_port");
+
+		if (C.is_open())
+		{
+			// Ouput in the console that connection was successful
+			LOG("Connected to PostgreSQL database successfully!");
+
+			// Create a table for the games if it doesn't already exist
+			pqxx::work txn(conn);
+			txn.exec("CREATE TABLE IF NOT EXISTS games (id SERIAL PRIMARY KEY, data VARCHAR(3));");
+			txn.commit();
+
+
+
+			// Insert the game stats as data into the table
+			pqxx::work txn2(conn);
+			txn2.exec("INSERT INTO test_table (data) VALUES ('Sample Data');");
+			txn2.commit();
+
+			C.disconnect();
+		}
+		else
+		{
+			// Output in the console that connection failed
+			LOG("Failed to connect to the PostgreSQL database!");
+			
+		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+	}
+}
+
+std::string playlistIDtoName(int playlistNumber)
+{
 	std::string playlistName;
 
 	switch (playlistNumber) {
@@ -414,6 +480,9 @@ void RLStatSaver::gameEnd(std::string eventName)
 	if (playerTeamGoals <= 0 && opponentTeamGoals <= 0) {
 		return;
 	}
+
+	// Try to output to the database if one is connected
+	outputToDatabase();
 
 	// Fill the top row with the proper labels
 	stream << "TEAM COLOR, " << "NAME, " << "GOALS, " << "ASSISTS, " << "SAVES, " << "SHOTS, " << "DEMOS, " << "SCORE, " << "MMR, " << "TEAM GOALS, " << "W/L, " << "TIMESTAMP, " << "PLAYERID\n";
